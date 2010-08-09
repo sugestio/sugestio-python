@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name="sugestio",
-      version="0.2",
+      version="0.3",
       description="Sugestio library for python",
       url="http://github.com/sugestio/sugestio-python",
       packages=find_packages(),
