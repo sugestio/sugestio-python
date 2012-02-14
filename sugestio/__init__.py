@@ -50,9 +50,32 @@ class Client:
         else:
             return int(resp['status']), content
 
+    def delete_item_metadata(self, itemid):
+        url = self._base() + "/items/" + str(itemid) + ".json"
+        resp, content = self._do_delete(url)        
+        return int(resp['status'])
+
+    def delete_user_metadata(self, userid):
+	url = self._base() + "/users/" + str(userid) + ".json"
+        resp, content = self._do_delete(url)
+        return int(resp['status'])
+
+    def delete_consumption(self, consumptionid):
+        url = self._base() + "/consumptions/" + str(consumptionid) + ".json"
+        resp, content = self._do_delete(url)        
+        return int(resp['status'])
+
+    def delete_user_consumptions(self, userid):
+	url = self._base() + "/users/" + str(userid) + "/consumptions.json"
+        resp, content = self._do_delete(url)        
+        return int(resp['status'])
+
     def _do_post(self, url, parameters):        
         body = urllib.urlencode(self._flatten(parameters))
         return self.client.request(url, "POST", body)
+
+    def _do_delete(self, url):
+	return self.client.request(url, "DELETE")
 
     def _flatten(self, dictionary):
         flattened = {}
