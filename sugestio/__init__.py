@@ -4,6 +4,11 @@ import urllib
 import csv
 import sys
 
+try:
+    import json
+except ImportError:
+    import simplejson as json 
+
 class Client:        
 
     def __init__(self, account, secret):
@@ -14,19 +19,19 @@ class Client:
 
 
     def add_user(self, user):
-        url = self._base() + "/users"
+        url = self._base() + "/users.json"
         resp, content = self._do_post(url, user)
         return int(resp['status'])
 
 
     def add_item(self, item):
-        url = self._base() + "/items"
+        url = self._base() + "/items.json"
         resp, content = self._do_post(url, item)        
         return int(resp['status'])
 
 
     def add_consumption(self, consumption):
-        url = self._base() + "/consumptions"        
+        url = self._base() + "/consumptions.json"
         resp, content = self._do_post(url, consumption)
         return int(resp['status'])
 
@@ -55,42 +60,36 @@ class Client:
         resp, content = self._do_delete(url)        
         return int(resp['status'])
 
+
     def delete_user_metadata(self, userid):
 	url = self._base() + "/users/" + str(userid) + ".json"
         resp, content = self._do_delete(url)
         return int(resp['status'])
+
 
     def delete_consumption(self, consumptionid):
         url = self._base() + "/consumptions/" + str(consumptionid) + ".json"
         resp, content = self._do_delete(url)        
         return int(resp['status'])
 
+
     def delete_user_consumptions(self, userid):
 	url = self._base() + "/users/" + str(userid) + "/consumptions.json"
         resp, content = self._do_delete(url)        
         return int(resp['status'])
 
-    def _do_post(self, url, parameters):        
-        body = urllib.urlencode(self._flatten(parameters))
-        return self.client.request(url, "POST", body)
+
+    def _do_post(self, url, parameters):    
+        headers = {'Content-Type':'application/json'}
+        body = json.dumps(parameters)
+        response, content = self.client.request(url, "POST", body, headers)
+        #print content
+        return response, content
+
 
     def _do_delete(self, url):
 	return self.client.request(url, "DELETE")
 
-    def _flatten(self, dictionary):
-        flattened = {}
-
-        for k, v in dictionary.items():
-            if k in self.multivalued:
-                i = 0
-                for x in v:
-                    newkey = "%s[%i]" % (k,i)
-                    flattened[newkey] = x
-                    i = i + 1
-            else:
-                flattened[k] = v
-
-        return flattened
 
     def _parse(self, content):
         recommendations = []
@@ -103,6 +102,7 @@ class Client:
                 pass #print sys.exc_info()[0]
 
         return recommendations
+
 
     def _base(self):
         return self.host + "/sites/" + self.account
