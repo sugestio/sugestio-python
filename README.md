@@ -1,7 +1,7 @@
 # Overview
 
 This is a Python library for interfacing with the [Sugestio](http://www.sugestio.com) 
-recommendation service. Data is submitted as POST variables. The library uses 
+recommendation service. Data is submitted as JSON data. The library uses 
 [python-oauth2](http://github.com/simplegeo/python-oauth2) to create the OAuth-signed requests. 
 
 ## About Sugestio
@@ -41,7 +41,7 @@ The following [API](http://www.sugestio.com/documentation) features are implemen
 ### Requirements
 
 [Python-oauth2](http://github.com/simplegeo/python-oauth2) uses <code>httplib2</code> for 
-request signing. 
+request signing and <code>json</code> or <code>simplejson</code> (Python 2.5) for data conversion.
 
 # Tutorial and sample code
 
