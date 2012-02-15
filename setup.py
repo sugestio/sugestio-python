@@ -8,4 +8,5 @@ setup(name="sugestio",
       url="http://github.com/sugestio/sugestio-python",
       packages=find_packages(),
       install_requires=['oauth2','urllib','csv','simplejson'],
+      license = "MIT License",
       keywords="sugestio recommendations library")
