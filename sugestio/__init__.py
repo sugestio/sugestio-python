@@ -22,16 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import sugestio
+from __future__ import print_function
+from sys import version_info
+
 import oauth2 as oauth
 import urllib
-import csv
-import sys
+
+from collections import namedtuple
 
 try:
     import json
 except ImportError:
-    import simplejson as json 
+    import simplejson as json
+
 
 class Client:        
 
@@ -39,94 +42,137 @@ class Client:
         self.account = str(account)
         self.host = "http://api.sugestio.com"
         self.client = oauth.Client(oauth.Consumer(account, secret))
-        self.multivalued = set(['category', 'creator', 'segment', 'tag'])
-
 
     def add_user(self, user):
         url = self._base() + "/users.json"
-        resp, content = self._do_post(url, user)
-        return int(resp['status'])
-
+        return self._do_post(url, user)
 
     def add_item(self, item):
         url = self._base() + "/items.json"
-        resp, content = self._do_post(url, item)        
-        return int(resp['status'])
+        return self._do_post(url, item)
 
+    def add_items(self, items):
+        url = self._base() + "/items.json"
+        self._add_bulk(url, items, 20)
 
     def add_consumption(self, consumption):
         url = self._base() + "/consumptions.json"
-        resp, content = self._do_post(url, consumption)
-        return int(resp['status'])
+        return self._do_post(url, consumption)
 
+    def add_consumptions(self, consumptions):
+        url = self._base() + "/consumptions.json"
+        self._add_bulk(url, consumptions, 100)
 
-    def get_recommendations(self, userid):
-        url = self._base() + "/users/" + str(userid) + "/recommendations.csv"        
-        return self._get_recommendations_or_similar(url)
-    
+    def _add_bulk(self, url, objects, chunksize=10):
+        chunks = [objects[x:x + chunksize] for x in range(0, len(objects), chunksize)]
+        i = 0
+        for chunk in chunks:
+            i = i + 1
+            attempt = 0
+            success = False
+            print("chunk", i, "of", len(chunks))
+            while success == False and attempt < 3:
+                attempt = attempt + 1
+                status, content = self._do_post(url, chunk)
+                if status == 202:
+                    success = True
+                    print("\tattempt", attempt, "returned status", status, "(Accepted)")
+                elif status >= 400 and status < 500:
+                    success = True
+                    print("\tattempt", attempt, "returned status", status, "(user error):", content)
+                else:
+                    print("\tattempt", attempt, "returned status", status, "(service error):",
+                          content)
+
+    def get_user_consumptions(self, userid, itemid=None):
+        url = self._base() + "/users/" + Client._xstr(userid) + "/consumptions"
+        if not itemid is None:
+            url = url + "/" + Client._xstr(itemid)
+        url = url + ".json"
+        return self._do_get(url)
+
+    def get_recommendations(self, userid, limit=None):
+        url = self._base() + "/users/" + Client._xstr(userid) + "/recommendations.json"
+        params = {}
+        if not limit is None:
+            params['limit'] = limit
+        return self._do_get(url, params)
 
     def get_similar(self, itemid):
-        url = self._base() + "/items/" + str(itemid) + "/similar.csv"
-        return self._get_recommendations_or_similar(url)
+        url = self._base() + "/items/" + Client._xstr(itemid) + "/similar.json"
+        return self._do_get(url)
 
+    def _get_recommendations_or_similar(self, url, params={}):
+        return self._do_get(url, params)
 
-    def _get_recommendations_or_similar(self, url):
+    def get_item(self, itemid):
+        url = self._base() + "/items/" + Client._xstr(itemid) + ".json"
+        return self._do_get(url)
+
+    def delete_item_metadata(self, itemid):
+        url = self._base() + "/items/" + Client._xstr(itemid) + ".json"
+        return self._do_delete(url)
+
+    def delete_user_metadata(self, userid):
+        url = self._base() + "/users/" + Client._xstr(userid) + ".json"
+        return self._do_delete(url)
+
+    def delete_consumption(self, consumptionid):
+        url = self._base() + "/consumptions/" + Client._xstr(consumptionid) + ".json"
+        return self._do_delete(url)
+
+    def delete_user_consumptions(self, userid):
+        url = self._base() + "/users/" + Client._xstr(userid) + "/consumptions.json"
+        return self._do_delete(url)
+
+    def _do_get(self, url, params={}):
+        if len(params) > 0:
+            try:
+                querystring = urllib.urlencode(params)
+            except AttributeError:
+                querystring = urllib.parse.urlencode(params)
+            url = url + "?" + querystring
+        print(url)
         resp, content = self.client.request(url, "GET")
 
+        if version_info[0] > 2:
+            content = str(content, "utf-8")
+
         if resp['status'] == '200':
-            recommendations = self._parse(content)
-            return int(resp['status']), recommendations
+            objects = Client._json2obj(content)
+            return int(resp['status']), objects
         else:
             return int(resp['status']), content
 
-    def delete_item_metadata(self, itemid):
-        url = self._base() + "/items/" + str(itemid) + ".json"
-        resp, content = self._do_delete(url)        
-        return int(resp['status'])
-
-
-    def delete_user_metadata(self, userid):
-	url = self._base() + "/users/" + str(userid) + ".json"
-        resp, content = self._do_delete(url)
-        return int(resp['status'])
-
-
-    def delete_consumption(self, consumptionid):
-        url = self._base() + "/consumptions/" + str(consumptionid) + ".json"
-        resp, content = self._do_delete(url)        
-        return int(resp['status'])
-
-
-    def delete_user_consumptions(self, userid):
-	url = self._base() + "/users/" + str(userid) + "/consumptions.json"
-        resp, content = self._do_delete(url)        
-        return int(resp['status'])
-
-
-    def _do_post(self, url, parameters):    
+    def _do_post(self, url, object):
         headers = {'Content-Type':'application/json'}
-        body = json.dumps(parameters)
-        response, content = self.client.request(url, "POST", body, headers)
-        #print content
-        return response, content
-
+        body = json.dumps(object, default=Client._serialize)
+        if version_info[0] > 2:
+            body = bytes(body, "utf-8")
+        response, content = self.client.request(url, "POST", body=body, headers=headers)
+        if version_info[0] > 2:
+            content = str(content, "utf-8")
+        return int(response['status']), content
 
     def _do_delete(self, url):
-	return self.client.request(url, "DELETE")
+        response, content = self.client.request(url, "DELETE")
+        if version_info[0] > 2:
+            content = str(content, "utf-8")
+        return int(response['status']), content
 
+    @staticmethod
+    def _xstr(s):
+        if s is None:
+            return ''
+        return str(s)
 
-    def _parse(self, content):
-        recommendations = []
-        reader = csv.reader(content.split("\n"))
+    @staticmethod
+    def _serialize(obj):
+        return obj.__dict__
 
-        for row in reader:
-            try:
-                recommendations.append(sugestio.Recommendation(row[0], row[1], row[2]))
-            except:
-                pass #print sys.exc_info()[0]
-
-        return recommendations
-
+    @staticmethod
+    def _json2obj(data):
+        return json.loads(data, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
 
     def _base(self):
         return self.host + "/sites/" + self.account
@@ -142,3 +188,40 @@ class Recommendation:
     itemid = None
     score = None
     algorithm = None
+    item = None
+
+
+class Consumption:
+
+    def __init__(self, userid, itemid):
+        self.userid = userid
+        self.itemid = itemid
+
+    id = None
+    userid = None
+    itemid = None
+    type = None
+    detail = None
+    date = None
+
+
+class Item:
+
+    def __init__(self, id):
+        self.id = id
+        self.category = []
+        self.tag = []
+        self.creator = []
+        self.segment = []
+
+    title = None
+    permalink = None
+    location_latlong = None
+
+class User:
+
+    def __init__(self, id):
+        self.id = id
+
+    gender = None
+    birthday = None
