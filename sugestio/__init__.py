@@ -38,14 +38,19 @@ except ImportError:
 
 class Client:        
 
-    def __init__(self, account, secret):
+    def __init__(self, account, secret, debug=False):
         self.account = str(account)
         self.host = "http://api.sugestio.com"
+        self.debug = debug
         self.client = oauth.Client(oauth.Consumer(account, secret))
 
     def add_user(self, user):
         url = self._base() + "/users.json"
         return self._do_post(url, user)
+
+    def add_users(self, users):
+        url = self._base() + "/users.json"
+        self._add_bulk(url, users, 20)
 
     def add_item(self, item):
         url = self._base() + "/items.json"
@@ -109,11 +114,19 @@ class Client:
         url = self._base() + "/items/" + Client._xstr(itemid) + ".json"
         return self._do_get(url)
 
-    def delete_item_metadata(self, itemid):
+    def get_user(self, userid):
+        url = self._base() + "/users/" + Client._xstr(userid) + ".json"
+        return self._do_get(url)
+
+    def get_consumption(self, consumptionid):
+        url = self._base() + "/consumptions/" + Client._xstr(consumptionid) + ".json"
+        return self._do_get(url)
+
+    def delete_item(self, itemid):
         url = self._base() + "/items/" + Client._xstr(itemid) + ".json"
         return self._do_delete(url)
 
-    def delete_user_metadata(self, userid):
+    def delete_user(self, userid):
         url = self._base() + "/users/" + Client._xstr(userid) + ".json"
         return self._do_delete(url)
 
@@ -121,19 +134,24 @@ class Client:
         url = self._base() + "/consumptions/" + Client._xstr(consumptionid) + ".json"
         return self._do_delete(url)
 
-    def delete_user_consumptions(self, userid):
-        url = self._base() + "/users/" + Client._xstr(userid) + "/consumptions.json"
+    def delete_user_consumptions(self, userid, itemid=None):
+        url = self._base() + "/users/" + Client._xstr(userid) + "/consumptions"
+        if not itemid is None:
+            url = url + "/" + Client._xstr(itemid)
+        url = url + ".json"
         return self._do_delete(url)
 
     def _do_get(self, url, params={}):
+        verb = 'GET'
         if len(params) > 0:
             try:
                 querystring = urllib.urlencode(params)
             except AttributeError:
                 querystring = urllib.parse.urlencode(params)
             url = url + "?" + querystring
-        print(url)
-        resp, content = self.client.request(url, "GET")
+        if self.debug:
+            print(verb, url)
+        resp, content = self.client.request(url, verb)
 
         if version_info[0] > 2:
             content = str(content, "utf-8")
@@ -145,17 +163,23 @@ class Client:
             return int(resp['status']), content
 
     def _do_post(self, url, object):
+        verb = 'POST'
         headers = {'Content-Type':'application/json'}
         body = json.dumps(object, default=Client._serialize)
         if version_info[0] > 2:
             body = bytes(body, "utf-8")
-        response, content = self.client.request(url, "POST", body=body, headers=headers)
+        if self.debug:
+            print(verb, url)
+        response, content = self.client.request(url, verb, body=body, headers=headers)
         if version_info[0] > 2:
             content = str(content, "utf-8")
         return int(response['status']), content
 
     def _do_delete(self, url):
-        response, content = self.client.request(url, "DELETE")
+        verb = 'DELETE'
+        if self.debug:
+            print(verb, url)
+        response, content = self.client.request(url, verb)
         if version_info[0] > 2:
             content = str(content, "utf-8")
         return int(response['status']), content
