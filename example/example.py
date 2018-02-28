@@ -22,73 +22,116 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import sugestio
+from __future__ import print_function
+from sugestio import Client as SugestioClient
+from sugestio import Consumption, Item, User
 
 ACCOUNT = 'sandbox'
-SECRET = 'demo'
+SECRET = 'secret'
 
-client = sugestio.Client(ACCOUNT, SECRET)
+client = SugestioClient(ACCOUNT, SECRET)
 
 
-def get_recommendations():    
-    status, content = client.get_recommendations(1)    
+def get_recommendations():
+    status, recommendations = client.get_recommendations(1, 2)
 
     if status == 200:
-        print content[0].itemid
-        print content[0].score
-        print content[0].algorithm
+        print("Title\tScore")
+        for recommendation in recommendations:
+            print(recommendation.item.title + "\t" + str(recommendation.score))
     else:
-        print "server response code:", status
-        print content
+        print("server response code:", status)
+        print(recommendations)
 
 
 def add_consumption():
-    params = {'userid':1, 'itemid':'abc', 'type':'VIEW'}
-    status = client.add_consumption(params)
-    print "server response code:", status
+    c = Consumption('1', 'abcd')
+    c.type = "RATING"
+    c.detail = "STAR:5:0:4"
+    status, content = client.add_consumption(c)
+    print("server response code:", status)
+
+
+def get_consumption_history():
+    status, consumptions = client.get_user_consumptions(35)
+    if status == 200:
+        for consumption in consumptions:
+            print(consumption)
+    else:
+        print("server response code:", status)
+        print(consumptions)
 
 
 def add_user():
-    params = {'id':1, 'gender':'M', 'birthday':'1975-04-05'}
-    status = client.add_user(params)
-    print "server response code:", status
+    u = User(10)
+    u.gender = "M"
+    u.birthday = "1975-04-05"
+    status, content = client.add_user(u)
+    print("server response code:", status)
+
+
+def get_item_metadata():
+    status, item = client.get_item(1)
+    if status == 200:
+        print ("Item:")
+        print("\tId =", item.id)
+        print("\tTitle =", item.title)
+        print("\tCategories =")
+        for c in item.category:
+            print ("\t\t", c)
+    else:
+        print("Status", status, ":", item)
 
 
 def delete_item_metadata():
-    status = client.delete_item_metadata(1)
-    print "server response code:", status
+    status, content = client.delete_item(15)
+    print("server response code:", status)
 
 
 def delete_user_metadata():
-    status = client.delete_user_metadata(1)
-    print "server response code:", status
+    status, content = client.delete_user(1)
+    print("server response code:", status)
 
 
 def delete_consumption():
-    status = client.delete_consumption("a-b-c-1-2-3")
-    print "server response code:", status
+    status, content = client.delete_consumption("a-b-c-1-2-3")
+    print("server response code:", status)
 
 
 def delete_user_consumptions():
-    status = client.delete_user_consumptions(1)
-    print "server response code:", status
+    status, content = client.delete_user_consumptions(1)
+    print("server response code:", status)
 
 
 def add_item():
-    params = {'id':'X75FKGE-E', 'from':'2010-07-01', 'until':'2010-09-01'}
-    params['tag'] = ['tag1', 'tag2']
-    status = client.add_item(params)
-    print "server response code:", status
+    item = Item('X75FKGE-E')
+    item.title = 'Item X75FKGE-E'
+    item.category.append('tag1')
+    item.category.append('tag2')
+    status, content = client.add_item(item)
+    print("server response code:", status)
+
+
+def add_items_bulk():
+    items = []
+    for i in range(1, 101):
+        item = Item(i)
+        item.title = "Item " + str(i)
+        items.append(item)
+    client.add_items(items)
 
 
 if __name__ == "__main__":
 
-    #get_recommendations()
-    #add_consumption()
-    #add_user()
-    #add_item()
-    #delete_item_metadata()
-    #delete_consumption()
-    #delete_user_metadata()
-    #delete_user_consumptions()
-    print "Done."
+    # get_recommendations()
+    # add_consumption()
+    # get_consumption_history()
+    # add_user()
+    # add_item()
+    # add_items_bulk()
+    # get_item_metadata()
+    # delete_item_metadata()
+    # delete_consumption()
+    # delete_user_metadata()
+    # delete_user_consumptions()
+    print("Done.")
