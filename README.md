@@ -1,7 +1,7 @@
 # Overview
 
 This is a Python library for interfacing with the [Sugestio](http://www.sugestio.com) 
-recommendation service. Data is submitted as JSON data. The library uses 
+recommendation service. Data is submitted and retrieved in JSON format. The library uses
 [python-oauth2](http://github.com/simplegeo/python-oauth2) to create the OAuth-signed requests. 
 
 ## About Sugestio
@@ -34,18 +34,20 @@ The following [API](http://www.sugestio.com/documentation) features are implemen
 
 * get personalized recommendations for a given user
 * get items that are similar to a given item
-* submit user activity (consumptions): clicks, purchases, ratings, ...
-* submit item metadata: description, location, tags, categories, ...  	
-* submit user metadata: gender, location, birthday, ...
+* submit and retrieve user activity (consumptions): clicks, purchases, ratings, ...
+* submit and retrieve item metadata: description, location, tags, categories, ...
+* submit and retrieve user metadata: gender, location, birthday, ...
+* bulk submission of consumptions and item/user metadata
 
 ### Requirements
 
 [Python-oauth2](http://github.com/simplegeo/python-oauth2) uses <code>httplib2</code> for 
-request signing and <code>json</code> or <code>simplejson</code> (Python 2.5) for data conversion.
+request signing and <code>json</code> or <code>simplejson</code> for data conversion. Compatible with
+Python 2.7 and 3.4.
 
 # Tutorial and sample code
 
-Get personal recommendations for user with id 1:
+Get top 5 personal recommendations for user with id 1:
 
 	import sugestio
 
@@ -54,14 +56,14 @@ Get personal recommendations for user with id 1:
 
 	client = sugestio.Client(ACCOUNT, SECRET)
 
-	status, content = client.get_recommendations(1)
+	status, content = client.get_recommendations(1, 5)
 
-	if status == 200:
-		print content[0].itemid
-		print content[0].score
-		print content[0].algorithm
-	else:
-		print "server response code:", status
-		print content
+    if status == 200:
+        print("Title\tScore")
+        for recommendation in content:
+            print(recommendation.item.title + "\t" + str(recommendation.score))
+    else:
+        print("server response code:", status)
+
 
 <code>example.py</code> contains more sample code that illustrates how you can use the library.
