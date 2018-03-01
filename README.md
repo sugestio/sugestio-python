@@ -43,7 +43,7 @@ The following [API](http://www.sugestio.com/documentation) features are implemen
 
 [Python-oauth2](http://github.com/simplegeo/python-oauth2) uses <code>httplib2</code> for 
 request signing and <code>json</code> or <code>simplejson</code> for data conversion. Compatible with
-Python 2.7 and 3.4.
+Python 2.7, 3.4 and 3.6.
 
 # Tutorial and sample code
 
