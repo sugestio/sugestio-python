@@ -26,14 +26,9 @@ from __future__ import print_function
 from sys import version_info
 
 import oauth2 as oauth
-import urllib
+import urllib, json
 
 from collections import namedtuple
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 
 class Client:        
@@ -145,9 +140,11 @@ class Client:
         verb = 'GET'
         if len(params) > 0:
             try:
-                querystring = urllib.urlencode(params)
-            except AttributeError:
+                # python 3.x
                 querystring = urllib.parse.urlencode(params)
+            except AttributeError:
+                # python 2.x fallback
+                querystring = urllib.urlencode(params)
             url = url + "?" + querystring
         if self.debug:
             print(verb, url)
