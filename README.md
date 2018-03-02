@@ -41,7 +41,7 @@ The following [API](http://www.sugestio.com/documentation) features are implemen
 
 ### Requirements
 
-This library is compatible with Python 2.7, 3.4 and 3.6. It requires [python-oauth2](https://github.com/joestump/python-oauth2) which in turn depends on <code>httplib2</code>. Installing python-oauth2 should automatically install the http2lib2 dependency:
+This library is compatible with Python 2.7, 3.4 and 3.6. It requires [python-oauth2](https://github.com/joestump/python-oauth2) which in turn depends on <code>httplib2</code>. Installing python-oauth2 should automatically install the httplib2 dependency:
 
     $ pip install oauth2
     
