@@ -41,9 +41,15 @@ The following [API](http://www.sugestio.com/documentation) features are implemen
 
 ### Requirements
 
-[Python-oauth2](http://github.com/simplegeo/python-oauth2) uses <code>httplib2</code> for 
-request signing and <code>json</code> or <code>simplejson</code> for data conversion. Compatible with
-Python 2.7, 3.4 and 3.6.
+This library is compatible with Python 2.7, 3.4 and 3.6. It requires [python-oauth2](https://github.com/joestump/python-oauth2) which in turn depends on <code>httplib2</code>. Installing python-oauth2 should automatically install the http2lib2 dependency. python-oauth2 can be installed through the PIP tool:
+
+    $ pip install oauth2
+    
+Or alternatively on Windows (may require an elevated command prompt):
+
+    > python.exe -m pip install oauth2
+    
+The use of [virtualenvs](http://docs.python-guide.org/en/latest/dev/virtualenvs/) is recommended.
 
 # Tutorial and sample code
 
